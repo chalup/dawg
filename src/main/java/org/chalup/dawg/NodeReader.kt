@@ -21,3 +21,6 @@ internal fun NodeReader.words(): List<String> {
 
     return mutableListOf<String>().apply { findWords(results = this) }
 }
+
+internal fun NodeReader.nodesSequence(): Sequence<Node> =
+    (0 until size()).iterator().asSequence().map { get(it) }
