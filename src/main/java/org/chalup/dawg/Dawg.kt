@@ -5,8 +5,10 @@ import okio.Source
 
 class Dawg
 internal constructor(private val nodeReader: NodeReader) {
-    operator fun contains(word: String): Boolean = TODO()
+    operator fun contains(word: String): Boolean {
+    }
 
+    fun words(): List<String> = nodeReader.words()
     fun encode(sink: Sink, format: DawgFormat): Unit = TODO()
 
     companion object {
@@ -14,6 +16,10 @@ internal constructor(private val nodeReader: NodeReader) {
         fun decode(source: Source): Dawg = TODO()
 
         @JvmStatic
-        fun generate(words: List<String>): Dawg = TODO()
+        fun generate(words: List<String>): Dawg =
+            DawgBuilder()
+                .build(words)
+                .let { ListNodeReader(it) }
+                .let { Dawg(it) }
     }
 }
