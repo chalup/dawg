@@ -116,7 +116,7 @@ internal class DawgBuilder(private val log: Logger = {}) {
 
         hash = childrenHash
             .writeInt(letter.toInt())
-            .writeBoolean(endOfDawgList)
+            .writeBoolean(endOfWord)
             .write(brothersHash.peek().readByteString())
             .sha1()
     }
