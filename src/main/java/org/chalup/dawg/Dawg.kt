@@ -31,7 +31,7 @@ internal constructor(private val nodeReader: NodeReader) {
     }
 
     fun words(): List<String> = nodeReader.words()
-    fun encode(sink: Sink, format: DawgFormat): Unit = with(sink.buffer()) {
+    fun encode(sink: Sink, format: DawgFormat = supportedFormats.maxBy { it.version }!!): Unit = with(sink.buffer()) {
         writeUtf8("DAWG")
         writeByte(format.version.toInt())
         format.encode(nodeReader, this)
