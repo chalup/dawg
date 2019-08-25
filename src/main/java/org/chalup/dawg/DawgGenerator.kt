@@ -52,11 +52,27 @@ class DawgGenerator {
         }
         val format = supportedFormats.first { it.id == formatName }
 
-        File(inputFilePath)
-            .readLines()
-            .let { words -> DawgBuilder(logger).build(words) }
+        val words = File(inputFilePath).readLines()
+
+        DawgBuilder(logger)
+            .build(words)
             .let { ListNodeReader(it) }
             .let { Dawg(it) }
+            .also { dawg ->
+                logger { "Checking the DAWG creation" }
+                val inputSet = words.toSet()
+                val dawgSet = dawg.words().toSet()
+
+                if (inputSet != dawgSet) {
+                    println("ERROR: created DAWG contents do not match the input")
+
+                    val missingWords = inputSet - dawgSet
+                    val extraWords = dawgSet - inputSet
+
+                    println("Missing words count: ${missingWords.size}, e.g. ${missingWords.take(5)}")
+                    println("Extra words count: ${extraWords.size}, e.g. ${extraWords.take(5)}")
+                }
+            }
             .run { File(outputFilePath).sink().buffer().use { sink -> encode(sink, format) } }
 
         println("Saved in $outputFilePath in '$formatName' format")
