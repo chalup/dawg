@@ -21,6 +21,28 @@ class DawgTest {
         Truth.assertThat(decodedWords).containsExactlyElementsIn(words)
     }
 
+    @Test
+    fun `dawg should contain all the input words`() {
+        val dawg = Dawg.generate(words)
+        for (word in words) {
+            Truth.assertThat(word in dawg).isTrue()
+        }
+    }
+
+    @Test
+    fun `dawg does not contain prefixes of the input words`() {
+        val dawg = Dawg.generate(words)
+
+        Truth.assertThat("dar" in dawg).isFalse()
+    }
+
+    @Test
+    fun `dawg should not contain words outside of the input word list`() {
+        val dawg = Dawg.generate(words)
+
+        Truth.assertThat("abrakadabra" in dawg).isFalse()
+    }
+
     companion object {
         val words = listOf("darować",
                            "konfiskowania",

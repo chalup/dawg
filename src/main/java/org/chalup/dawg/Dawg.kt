@@ -7,6 +7,27 @@ import okio.buffer
 class Dawg
 internal constructor(private val nodeReader: NodeReader) {
     operator fun contains(word: String): Boolean {
+        var nodeIndex = 0
+        var charIndex = 0
+
+        do {
+            val node = nodeReader[nodeIndex]
+
+            if (node.letter == word[charIndex]) {
+                if (charIndex + 1 == word.length) {
+                    return node.endOfWord
+                } else {
+                    nodeIndex = node.firstChildIndex
+                    charIndex += 1
+                }
+            } else if (!node.lastChild) {
+                nodeIndex += 1
+            } else {
+                nodeIndex = 0
+            }
+        } while (nodeIndex != 0)
+
+        return false
     }
 
     fun words(): List<String> = nodeReader.words()
