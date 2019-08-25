@@ -10,9 +10,9 @@ internal class DawgBuilder(private val log: Logger = {}) {
         .step("Building DAWG with ${words.size} words") { words }
         .step("Sorting words") { sortedWith(compareBy<String> { it.length }.then(naturalOrder())) }
         .step("Building trie") { buildTree(this).setChildMarkers() }
-        .step("Calculate hashes") { calculateHashes() }
-        .step("Reduce nodes") { reduceGraph() }
-        .step("Index nodes") { indexedNodes() }
+        .step("Calculating hashes") { calculateHashes() }
+        .step("Reducing nodes") { reduceGraph() }
+        .step("Indexing nodes") { indexedNodes() }
         .step("Converting TrieNodes to DAWG Nodes") {
             map {
                 Node(
