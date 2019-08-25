@@ -1,7 +1,7 @@
 package org.chalup.dawg
 
-import com.google.common.hash.HashCode
-import com.google.common.hash.Hashing
+import okio.Buffer
+import okio.ByteString
 
 typealias Logger = (() -> String) -> Unit
 
@@ -46,7 +46,7 @@ internal class DawgBuilder(private val log: Logger = {}) {
             parent.children.add(this)
         }
 
-        lateinit var hash: HashCode
+        lateinit var hash: ByteString
 
         fun findChild(letter: Char) = children.find { it.letter == letter }
         fun addChild(letter: Char, depthGroup: Int) = TrieNode(letter, depthGroup, this)
@@ -102,24 +102,23 @@ internal class DawgBuilder(private val log: Logger = {}) {
         }
     }
 
-    private fun TrieNode.calculateHashes(brothersHash: ByteArray = ByteArray(0)): TrieNode = apply {
-        var childrenHash = ByteArray(0)
+    private fun TrieNode.calculateHashes(brothersHash: Buffer = Buffer()): TrieNode = apply {
+        val childrenHash = Buffer()
 
         // We're iterating through children backwards, so the intermediate values of
         // childrenHash are in fact brothersHash of successive children.
         children.asReversed().forEach { child ->
             child.calculateHashes(childrenHash)
-            childrenHash += child.hash.asBytes()
+            childrenHash.write(child.hash)
         }
 
-        hash = Hashing
-            .goodFastHash(160)
-            .newHasher()
-            .putBytes(childrenHash)
-            .putChar(letter)
-            .putBoolean(endOfWord)
-            .putBytes(brothersHash)
-            .hash()
+        fun Buffer.writeBoolean(b: Boolean): Buffer = writeByte(if (b) 1 else 0)
+
+        hash = childrenHash
+            .writeInt(letter.toInt())
+            .writeBoolean(endOfDawgList)
+            .write(brothersHash.peek().readByteString())
+            .sha1()
     }
 
     private fun TrieNode.reduceGraph(): TrieNode = apply {
