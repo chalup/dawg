@@ -1,7 +1,8 @@
 package org.chalup.dawg
 
-import okio.Buffer
-import okio.ByteString
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.security.MessageDigest
 
 typealias Logger = (() -> String) -> Unit
 
@@ -46,7 +47,7 @@ internal class DawgBuilder(private val log: Logger = {}) {
             parent.children.add(this)
         }
 
-        lateinit var hash: ByteString
+        lateinit var hash: Hasher.HashCode
 
         fun findChild(letter: Char) = children.find { it.letter == letter }
         fun addChild(letter: Char, depthGroup: Int) = TrieNode(letter, depthGroup, this)
@@ -102,23 +103,22 @@ internal class DawgBuilder(private val log: Logger = {}) {
         }
     }
 
-    private fun TrieNode.calculateHashes(brothersHash: Buffer = Buffer()): TrieNode = apply {
-        val childrenHash = Buffer()
+    private fun TrieNode.calculateHashes(brothersHash: ByteArray = ByteArray(0)): TrieNode = apply {
+        var childrenHash = ByteArray(0)
 
         // We're iterating through children backwards, so the intermediate values of
         // childrenHash are in fact brothersHash of successive children.
         children.asReversed().forEach { child ->
             child.calculateHashes(childrenHash)
-            childrenHash.write(child.hash)
+            childrenHash += child.hash.data
         }
 
-        fun Buffer.writeBoolean(b: Boolean): Buffer = writeByte(if (b) 1 else 0)
-
-        hash = childrenHash
-            .writeInt(letter.toInt())
-            .writeBoolean(endOfWord)
-            .write(brothersHash.peek().readByteString())
-            .sha1()
+        hash = Hasher
+            .put(childrenHash)
+            .put(letter)
+            .put(endOfWord)
+            .put(brothersHash)
+            .hash()
     }
 
     private fun TrieNode.reduceGraph(): TrieNode = apply {
@@ -170,5 +170,45 @@ internal class DawgBuilder(private val log: Logger = {}) {
             }
 
         return indexed
+    }
+}
+
+/**
+ * More efficient (roughly 50%) hashing method than the one using okio. Loosely based on Guava Hashing, but tailored
+ * for our concrete use case to save some allocations and CPU time: it's not thread safe and it's not reentrant safe.
+ */
+private object Hasher {
+    private val digest = MessageDigest.getInstance("SHA-1")
+    private val scratch = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+
+    fun put(value: Boolean) = apply {
+        val byte: Byte = if (value) 1 else 0
+        digest.update(byte)
+    }
+
+    fun put(value: Char) = apply {
+        scratch.putChar(value)
+        try {
+            digest.update(scratch.array(), 0, Char.SIZE_BYTES)
+        } finally {
+            scratch.clear()
+        }
+    }
+
+    fun put(value: ByteArray) = apply {
+        digest.update(value)
+    }
+
+    fun hash(): HashCode {
+        return HashCode(digest.digest())
+    }
+
+    class HashCode(val data: ByteArray) {
+        override fun equals(other: Any?): Boolean =
+            (other === this) || (other is HashCode && data.contentEquals(other.data))
+
+        override fun hashCode(): Int {
+            return data.contentHashCode()
+        }
     }
 }
