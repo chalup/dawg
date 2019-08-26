@@ -33,7 +33,7 @@ class DawgTest {
     fun `dawg does not contain prefixes of the input words`() {
         val dawg = Dawg.generate(words)
 
-        Truth.assertThat("dar" in dawg).isFalse()
+        Truth.assertThat("chart" in dawg).isFalse()
     }
 
     @Test
@@ -44,15 +44,15 @@ class DawgTest {
     }
 
     companion object {
-        val words = listOf("darować",
-                           "konfiskowania",
-                           "odpijmyż",
-                           "powystawianiem",
-                           "przeżartować",
-                           "przeżartujmy",
-                           "respiracyjnego",
-                           "respirować",
-                           "respirujmy",
-                           "zabłąkaliście")
+        val words = listOf("charting",
+                           "garrotted",
+                           "idealless",
+                           "leukaemia",
+                           "mildewing",
+                           "pugnacities",
+                           "skive",
+                           "skives",
+                           "thespians",
+                           "woebegoneness")
     }
 }
